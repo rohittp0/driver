@@ -98,21 +98,6 @@ const Index = () => {
     }
   }, [isRunning, accelerometerData.elapsedTime]);
 
-  // Handle game over condition (score reaches 0)
-  useEffect(() => {
-    const perfectScore = 9.8;
-    const calculatedScore = Math.max(0, 100 - (Math.abs(accelerometerData.averageAcceleration - perfectScore) / perfectScore) * 100);
-    
-    if (isRunning && calculatedScore <= 0) {
-      toggleAccelerometer();
-      toast({
-        title: "Game Over!",
-        description: "Your driving was too rough. Try again!",
-        variant: "destructive",
-      });
-    }
-  }, [isRunning, accelerometerData.averageAcceleration, toggleAccelerometer, toast]);
-
   // Handle toggling the accelerometer
   const handleToggle = () => {
     // If stopping and time threshold met, show save dialog
