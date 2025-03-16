@@ -10,30 +10,40 @@ interface SaveScoreDialogProps {
   onClose: () => void;
   score: number;
   elapsedTime: number;
+  onLoginRequired: () => void;
 }
 
-const SaveScoreDialog = ({ isOpen, onClose, score, elapsedTime }: SaveScoreDialogProps) => {
+const SaveScoreDialog = ({ isOpen, onClose, score, elapsedTime, onLoginRequired }: SaveScoreDialogProps) => {
   const { toast } = useToast();
   
-  const saveScore = async () => {
+  const checkAuthAndSave = async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       
       if (!user) {
-        toast({
-          title: "Not signed in",
-          description: "You need to be signed in to save your score.",
-          variant: "destructive",
-        });
-        onClose();
+        // Redirect to auth flow instead of showing an error
+        onLoginRequired();
         return;
       }
       
+      await saveScore(user.id);
+    } catch (error) {
+      console.error('Unexpected error checking auth:', error);
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+  
+  const saveScore = async (userId: string) => {
+    try {
       const { error } = await supabase
         .from('driving_scores')
         .insert([
           { 
-            user_id: user.id,
+            user_id: userId,
             score,
             time_seconds: elapsedTime,
           }
@@ -75,7 +85,7 @@ const SaveScoreDialog = ({ isOpen, onClose, score, elapsedTime }: SaveScoreDialo
           </DialogDescription>
         </DialogHeader>
         <div className="flex flex-col gap-4 py-4">
-          <Button onClick={saveScore} className="w-full">
+          <Button onClick={checkAuthAndSave} className="w-full">
             Save Score
           </Button>
           <Button variant="outline" onClick={onClose} className="w-full">

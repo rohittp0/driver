@@ -7,6 +7,8 @@ import AuthDialog from '@/components/AuthDialog';
 import { useToast } from '@/components/ui/use-toast';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
+import { Button } from '@/components/ui/button';
+import { LogIn, LogOut } from 'lucide-react';
 
 const Index = () => {
   const { toast } = useToast();
@@ -38,16 +40,29 @@ const Index = () => {
     const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
       setIsAuthenticated(!!session?.user);
       
-      if (event === 'SIGNED_IN' && showAuthDialog) {
-        setShowAuthDialog(false);
-        setShowSaveDialog(true);
+      if (event === 'SIGNED_IN') {
+        toast({
+          title: "Signed In",
+          description: "You have successfully signed in.",
+        });
+        
+        // If user was trying to save a score, reopen save dialog
+        if (showAuthDialog) {
+          setShowAuthDialog(false);
+          setShowSaveDialog(true);
+        }
+      } else if (event === 'SIGNED_OUT') {
+        toast({
+          title: "Signed Out",
+          description: "You have signed out.",
+        });
       }
     });
     
     return () => {
       authListener.subscription.unsubscribe();
     };
-  }, [showAuthDialog]);
+  }, [showAuthDialog, toast]);
   
   // Handle errors and permissions
   useEffect(() => {
@@ -119,16 +134,27 @@ const Index = () => {
   };
 
   // Handle auth dialog
-  const handleSaveClick = async () => {
-    if (!isAuthenticated) {
-      setShowSaveDialog(false);
-      setShowAuthDialog(true);
-    }
+  const handleLoginRequired = () => {
+    setShowSaveDialog(false);
+    setShowAuthDialog(true);
   };
   
+  const handleAuthClose = () => {
+    setShowAuthDialog(false);
+  };
+
   const handleAuthSuccess = () => {
     setShowAuthDialog(false);
     setShowSaveDialog(true);
+  };
+  
+  // Handle login/logout
+  const handleLoginLogout = () => {
+    if (isAuthenticated) {
+      supabase.auth.signOut();
+    } else {
+      setShowAuthDialog(true);
+    }
   };
 
   // Check if the device/browser supports accelerometer
@@ -171,8 +197,28 @@ const Index = () => {
       isRunning ? "bg-background" : "bg-background"
     )}>
       <div className="w-full max-w-xl mx-auto">
-        <header className="text-center mb-12 animate-fade-in">
-          <h1 className="text-3xl font-bold tracking-tight mb-1">Smooth Driver Challenge</h1>
+        <header className="text-center mb-8 animate-fade-in">
+          <div className="flex justify-between items-center mb-4">
+            <h1 className="text-3xl font-bold tracking-tight">Smooth Driver Challenge</h1>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={handleLoginLogout}
+              className="flex items-center gap-2"
+            >
+              {isAuthenticated ? (
+                <>
+                  <LogOut size={16} />
+                  <span>Sign Out</span>
+                </>
+              ) : (
+                <>
+                  <LogIn size={16} />
+                  <span>Sign In</span>
+                </>
+              )}
+            </Button>
+          </div>
           <p className="text-muted-foreground">
             Drive smoothly to achieve the highest score
           </p>
@@ -207,6 +253,11 @@ const Index = () => {
             Driving time: <span className="font-medium">{accelerometerData.elapsedTime.toFixed(1)}s</span>
             {timeThresholdMet && !isRunning && " (Eligible to save score)"}
           </p>
+          {isAuthenticated && (
+            <p className="mt-2 text-green-500">
+              You're signed in and ready to save scores
+            </p>
+          )}
         </div>
       </div>
 
@@ -216,12 +267,13 @@ const Index = () => {
         onClose={handleSaveDialogClose}
         score={accelerometerData.averageAcceleration}
         elapsedTime={accelerometerData.elapsedTime}
+        onLoginRequired={handleLoginRequired}
       />
       
       {/* Auth Dialog */}
       <AuthDialog
         isOpen={showAuthDialog}
-        onClose={() => setShowAuthDialog(false)}
+        onClose={handleAuthClose}
         onSuccess={handleAuthSuccess}
       />
     </div>
