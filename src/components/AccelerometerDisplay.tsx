@@ -20,29 +20,32 @@ const AccelerometerDisplay = ({
   className,
   maxAcceleration = 20 // Max value for the progress bar
 }: AccelerometerDisplayProps) => {
-  // Calculate the percentage for the progress bar (0-100)
-  const accelerationPercentage = Math.min(
-    (averageAcceleration / maxAcceleration) * 100,
-    100
-  );
+  // Calculate score based on proximity to 9.8 (gravity)
+  // 9.8 is 100% score, deviations reduce the score linearly
+  const perfectScore = 9.8;
+  const calculatedScore = Math.max(0, 100 - (Math.abs(averageAcceleration - perfectScore) / perfectScore) * 100);
   
   // Format the acceleration value for display
   const formattedAcceleration = averageAcceleration.toFixed(2);
+  const formattedScore = calculatedScore.toFixed(0);
 
   return (
     <div className={cn("flex flex-col items-center justify-center gap-8", className)}>
       <div className="flex flex-col items-center animate-fade-in">
         <div className="text-sm font-medium text-muted-foreground uppercase tracking-wide mb-1">
-          Average Acceleration
+          Driver Score
         </div>
         <div className="text-3xl font-bold tracking-tight">
-          {formattedAcceleration} <span className="text-lg font-normal text-muted-foreground">m/s²</span>
+          {formattedScore}<span className="text-lg font-normal text-muted-foreground">%</span>
+        </div>
+        <div className="text-sm text-muted-foreground mt-1">
+          Avg. Acceleration: {formattedAcceleration} <span>m/s²</span>
         </div>
       </div>
       
       <div className="relative">
         <CircularProgress 
-          value={accelerationPercentage} 
+          value={calculatedScore} 
           size={300}
           strokeWidth={12}
           color="stroke-primary"
@@ -76,8 +79,8 @@ const AccelerometerDisplay = ({
       <div className="text-center animate-slide-up">
         <p className="text-sm text-muted-foreground max-w-md">
           {isRunning 
-            ? "Currently measuring device acceleration. Tap the button to stop." 
-            : "Tap the button to start measuring acceleration."}
+            ? "Driving in progress. Stay smooth to get a better score!" 
+            : "Tap the button to start measuring your driving smoothness."}
         </p>
       </div>
     </div>

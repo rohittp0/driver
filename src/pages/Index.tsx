@@ -2,8 +2,11 @@
 import React, { useState, useEffect } from 'react';
 import { useAccelerometer } from '@/hooks/useAccelerometer';
 import AccelerometerDisplay from '@/components/AccelerometerDisplay';
+import SaveScoreDialog from '@/components/SaveScoreDialog';
+import AuthDialog from '@/components/AuthDialog';
 import { useToast } from '@/components/ui/use-toast';
 import { cn } from '@/lib/utils';
+import { supabase } from '@/integrations/supabase/client';
 
 const Index = () => {
   const { toast } = useToast();
@@ -17,6 +20,34 @@ const Index = () => {
   } = useAccelerometer();
   
   const [permissionGranted, setPermissionGranted] = useState<boolean>(true);
+  const [showSaveDialog, setShowSaveDialog] = useState<boolean>(false);
+  const [showAuthDialog, setShowAuthDialog] = useState<boolean>(false);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+  const [timeThresholdMet, setTimeThresholdMet] = useState<boolean>(false);
+  
+  // Check authentication status
+  useEffect(() => {
+    const checkUser = async () => {
+      const { data } = await supabase.auth.getUser();
+      setIsAuthenticated(!!data.user);
+    };
+    
+    checkUser();
+    
+    // Subscribe to auth state changes
+    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
+      setIsAuthenticated(!!session?.user);
+      
+      if (event === 'SIGNED_IN' && showAuthDialog) {
+        setShowAuthDialog(false);
+        setShowSaveDialog(true);
+      }
+    });
+    
+    return () => {
+      authListener.subscription.unsubscribe();
+    };
+  }, [showAuthDialog]);
   
   // Handle errors and permissions
   useEffect(() => {
@@ -39,7 +70,7 @@ const Index = () => {
           if (permission !== 'granted') {
             toast({
               title: "Permission Denied",
-              description: "Accelerometer access is required for this app to function correctly.",
+              description: "Accelerometer access is required for this game to function correctly.",
               variant: "destructive",
             });
           }
@@ -57,6 +88,63 @@ const Index = () => {
     
     requestPermission();
   }, [error, toast]);
+
+  // Check for time threshold (30 seconds)
+  useEffect(() => {
+    if (isRunning && accelerometerData.elapsedTime >= 30) {
+      setTimeThresholdMet(true);
+    } else {
+      setTimeThresholdMet(false);
+    }
+  }, [isRunning, accelerometerData.elapsedTime]);
+
+  // Handle game over condition (score reaches 0)
+  useEffect(() => {
+    const perfectScore = 9.8;
+    const calculatedScore = Math.max(0, 100 - (Math.abs(accelerometerData.averageAcceleration - perfectScore) / perfectScore) * 100);
+    
+    if (isRunning && calculatedScore <= 0) {
+      toggleAccelerometer();
+      toast({
+        title: "Game Over!",
+        description: "Your driving was too rough. Try again!",
+        variant: "destructive",
+      });
+    }
+  }, [isRunning, accelerometerData.averageAcceleration, toggleAccelerometer, toast]);
+
+  // Handle toggling the accelerometer
+  const handleToggle = () => {
+    // If stopping and time threshold met, show save dialog
+    if (isRunning && timeThresholdMet) {
+      toggleAccelerometer();
+      setShowSaveDialog(true);
+    } else {
+      // If starting, reset accelerometer
+      if (!isRunning) {
+        resetAccelerometer();
+      }
+      toggleAccelerometer();
+    }
+  };
+
+  // Handle save dialog close
+  const handleSaveDialogClose = () => {
+    setShowSaveDialog(false);
+  };
+
+  // Handle auth dialog
+  const handleSaveClick = async () => {
+    if (!isAuthenticated) {
+      setShowSaveDialog(false);
+      setShowAuthDialog(true);
+    }
+  };
+  
+  const handleAuthSuccess = () => {
+    setShowAuthDialog(false);
+    setShowSaveDialog(true);
+  };
 
   // Check if the device/browser supports accelerometer
   if (!isAvailable) {
@@ -83,7 +171,7 @@ const Index = () => {
         <div className="max-w-md p-8 rounded-2xl glass-morphism">
           <h1 className="text-2xl font-bold mb-4">Permission Required</h1>
           <p className="text-muted-foreground mb-6">
-            This app needs access to your device's motion and orientation data.
+            This game needs access to your device's motion data to measure your driving smoothness.
             Please enable it in your device settings and reload the page.
           </p>
         </div>
@@ -99,16 +187,16 @@ const Index = () => {
     )}>
       <div className="w-full max-w-xl mx-auto">
         <header className="text-center mb-12 animate-fade-in">
-          <h1 className="text-3xl font-bold tracking-tight mb-1">Accelerometer Tracker</h1>
+          <h1 className="text-3xl font-bold tracking-tight mb-1">Smooth Driver Challenge</h1>
           <p className="text-muted-foreground">
-            Measure and track your device's acceleration
+            Drive smoothly to achieve the highest score
           </p>
         </header>
         
         <AccelerometerDisplay
           averageAcceleration={accelerometerData.averageAcceleration}
           isRunning={isRunning}
-          onToggle={toggleAccelerometer}
+          onToggle={handleToggle}
           className="mb-12"
         />
         
@@ -131,11 +219,26 @@ const Index = () => {
         
         <div className="mt-8 text-center text-sm text-muted-foreground animate-fade-in">
           <p>
-            Elapsed time: <span className="font-medium">{accelerometerData.elapsedTime.toFixed(1)}s</span> | 
-            Accumulated: <span className="font-medium">{accelerometerData.accumulatedAcceleration.toFixed(2)}</span>
+            Driving time: <span className="font-medium">{accelerometerData.elapsedTime.toFixed(1)}s</span>
+            {timeThresholdMet && !isRunning && " (Eligible to save score)"}
           </p>
         </div>
       </div>
+
+      {/* Save Score Dialog */}
+      <SaveScoreDialog 
+        isOpen={showSaveDialog} 
+        onClose={handleSaveDialogClose}
+        score={accelerometerData.averageAcceleration}
+        elapsedTime={accelerometerData.elapsedTime}
+      />
+      
+      {/* Auth Dialog */}
+      <AuthDialog
+        isOpen={showAuthDialog}
+        onClose={() => setShowAuthDialog(false)}
+        onSuccess={handleAuthSuccess}
+      />
     </div>
   );
 };
