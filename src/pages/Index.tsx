@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useAccelerometer } from '@/hooks/useAccelerometer';
 import AccelerometerDisplay from '@/components/AccelerometerDisplay';
@@ -7,8 +6,7 @@ import AuthDialog from '@/components/AuthDialog';
 import { useToast } from '@/components/ui/use-toast';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
-import { Button } from '@/components/ui/button';
-import { LogIn, LogOut } from 'lucide-react';
+import Menu from '@/components/Menu';
 
 const Index = () => {
   const { toast } = useToast();
@@ -148,13 +146,9 @@ const Index = () => {
     setShowSaveDialog(true);
   };
   
-  // Handle login/logout
-  const handleLoginLogout = () => {
-    if (isAuthenticated) {
-      supabase.auth.signOut();
-    } else {
-      setShowAuthDialog(true);
-    }
+  // Handle login
+  const handleLoginClick = () => {
+    setShowAuthDialog(true);
   };
 
   // Check if the device/browser supports accelerometer
@@ -200,24 +194,10 @@ const Index = () => {
         <header className="text-center mb-8 animate-fade-in">
           <div className="flex justify-between items-center mb-4">
             <h1 className="text-3xl font-bold tracking-tight">Smooth Driver Challenge</h1>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={handleLoginLogout}
-              className="flex items-center gap-2"
-            >
-              {isAuthenticated ? (
-                <>
-                  <LogOut size={16} />
-                  <span>Sign Out</span>
-                </>
-              ) : (
-                <>
-                  <LogIn size={16} />
-                  <span>Sign In</span>
-                </>
-              )}
-            </Button>
+            <Menu 
+              isAuthenticated={isAuthenticated}
+              onLoginClick={handleLoginClick} 
+            />
           </div>
           <p className="text-muted-foreground">
             Drive smoothly to achieve the highest score
@@ -281,3 +261,4 @@ const Index = () => {
 };
 
 export default Index;
+
