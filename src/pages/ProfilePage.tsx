@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Trophy } from 'lucide-react';
+import DriveDetailModal from '@/components/DriveDetailModal';
 
 const ProfilePage = () => {
   const { userId } = useParams<{ userId: string }>();
@@ -18,6 +19,8 @@ const ProfilePage = () => {
   const [isCurrentUser, setIsCurrentUser] = useState(false);
   const [bestScore, setBestScore] = useState<number | null>(null);
   const [longestDrive, setLongestDrive] = useState<number | null>(null);
+  const [selectedDrive, setSelectedDrive] = useState<any>(null);
+  const [showDriveModal, setShowDriveModal] = useState(false);
 
   // Get current user ID
   useEffect(() => {
@@ -97,6 +100,15 @@ const ProfilePage = () => {
     fetchProfileData();
   }, [userId, toast]);
 
+  const handleViewDriveDetails = (drive: any) => {
+    setSelectedDrive(drive);
+    setShowDriveModal(true);
+  };
+
+  const handleCloseDriveModal = () => {
+    setShowDriveModal(false);
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center p-6">
@@ -116,6 +128,9 @@ const ProfilePage = () => {
       </div>
     );
   }
+
+  // Calculate normalized score (0-100) for display
+  const normalizedBestScore = bestScore !== null ? Math.max(0, Math.min(100, 100 - bestScore * 10)) : null;
 
   return (
     <div className="min-h-screen flex flex-col p-6">
@@ -149,7 +164,9 @@ const ProfilePage = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-3xl font-bold">{bestScore !== null ? bestScore.toFixed(2) : "No scores yet"}</p>
+            <p className="text-3xl font-bold">
+              {normalizedBestScore !== null ? `${normalizedBestScore.toFixed(0)}/100` : "No scores yet"}
+            </p>
           </CardContent>
         </Card>
 
@@ -169,10 +186,16 @@ const ProfilePage = () => {
       {scores.length > 0 ? (
         <div className="space-y-4">
           {scores.map((score) => (
-            <Card key={score.id}>
+            <Card 
+              key={score.id} 
+              className="hover:bg-accent/50 transition-colors cursor-pointer"
+              onClick={() => handleViewDriveDetails(score)}
+            >
               <CardContent className="p-4 flex justify-between items-center">
                 <div>
-                  <p className="font-medium">Score: {score.score.toFixed(2)}</p>
+                  <p className="font-medium">
+                    Score: {Math.max(0, Math.min(100, 100 - score.score * 10)).toFixed(0)}/100
+                  </p>
                   <p className="text-sm text-muted-foreground">
                     Time: {score.time_seconds.toFixed(1)}s
                   </p>
@@ -186,6 +209,19 @@ const ProfilePage = () => {
         </div>
       ) : (
         <p className="text-center text-muted-foreground">No driving scores yet.</p>
+      )}
+
+      {selectedDrive && (
+        <DriveDetailModal
+          isOpen={showDriveModal}
+          onClose={handleCloseDriveModal}
+          score={selectedDrive.score}
+          time={selectedDrive.time_seconds}
+          date={selectedDrive.created_at}
+          topSpeed={selectedDrive.top_speed || 0}
+          averageSpeed={selectedDrive.average_speed || 0}
+          profileId={userId || ''}
+        />
       )}
     </div>
   );

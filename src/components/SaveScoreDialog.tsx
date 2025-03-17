@@ -11,9 +11,19 @@ interface SaveScoreDialogProps {
   score: number;
   elapsedTime: number;
   onLoginRequired: () => void;
+  topSpeed: number;
+  averageSpeed: number;
 }
 
-const SaveScoreDialog = ({ isOpen, onClose, score, elapsedTime, onLoginRequired }: SaveScoreDialogProps) => {
+const SaveScoreDialog = ({ 
+  isOpen, 
+  onClose, 
+  score, 
+  elapsedTime, 
+  onLoginRequired,
+  topSpeed,
+  averageSpeed 
+}: SaveScoreDialogProps) => {
   const { toast } = useToast();
   
   const checkAuthAndSave = async () => {
@@ -46,6 +56,8 @@ const SaveScoreDialog = ({ isOpen, onClose, score, elapsedTime, onLoginRequired 
             user_id: userId,
             score,
             time_seconds: elapsedTime,
+            top_speed: topSpeed,
+            average_speed: averageSpeed,
           }
         ]);
       

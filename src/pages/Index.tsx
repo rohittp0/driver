@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useAccelerometer } from '@/hooks/useAccelerometer';
 import AccelerometerDisplay from '@/components/AccelerometerDisplay';
@@ -29,7 +28,6 @@ const Index = () => {
   const [timeThresholdMet, setTimeThresholdMet] = useState<boolean>(false);
   const [userProfile, setUserProfile] = useState<any>(null);
   
-  // Check authentication status
   useEffect(() => {
     const checkUser = async () => {
       const { data } = await supabase.auth.getUser();
@@ -37,7 +35,6 @@ const Index = () => {
       setIsAuthenticated(isAuth);
       
       if (isAuth) {
-        // Fetch user profile
         const { data: profileData } = await supabase
           .from('profiles')
           .select('*')
@@ -50,7 +47,6 @@ const Index = () => {
     
     checkUser();
     
-    // Subscribe to auth state changes
     const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
       setIsAuthenticated(!!session?.user);
       
@@ -60,7 +56,6 @@ const Index = () => {
           description: "You have successfully signed in.",
         });
         
-        // Fetch user profile after sign in
         if (session?.user) {
           const { data: profileData } = await supabase
             .from('profiles')
@@ -71,7 +66,6 @@ const Index = () => {
           setUserProfile(profileData);
         }
         
-        // If user was trying to save a score, reopen save dialog
         if (showAuthDialog) {
           setShowAuthDialog(false);
           setShowSaveDialog(true);
@@ -90,7 +84,6 @@ const Index = () => {
     };
   }, [showAuthDialog, toast]);
   
-  // Handle errors and permissions
   useEffect(() => {
     if (error) {
       toast({
@@ -100,7 +93,6 @@ const Index = () => {
       });
     }
     
-    // Request permission for DeviceMotion on iOS
     const requestPermission = async () => {
       if (typeof DeviceMotionEvent !== 'undefined' && 
           typeof (DeviceMotionEvent as any).requestPermission === 'function') {
@@ -130,7 +122,6 @@ const Index = () => {
     requestPermission();
   }, [error, toast]);
 
-  // Check for time threshold (30 seconds)
   useEffect(() => {
     if (isRunning && accelerometerData.elapsedTime >= 30) {
       setTimeThresholdMet(true);
@@ -139,14 +130,11 @@ const Index = () => {
     }
   }, [isRunning, accelerometerData.elapsedTime]);
 
-  // Handle toggling the accelerometer
   const handleToggle = () => {
-    // If stopping and time threshold met, show save dialog
     if (isRunning && timeThresholdMet) {
       toggleAccelerometer();
       setShowSaveDialog(true);
     } else {
-      // If starting, reset accelerometer
       if (!isRunning) {
         resetAccelerometer();
       }
@@ -154,12 +142,10 @@ const Index = () => {
     }
   };
 
-  // Handle save dialog close
   const handleSaveDialogClose = () => {
     setShowSaveDialog(false);
   };
 
-  // Handle auth dialog
   const handleLoginRequired = () => {
     setShowSaveDialog(false);
     setShowAuthDialog(true);
@@ -174,12 +160,6 @@ const Index = () => {
     setShowSaveDialog(true);
   };
   
-  // Handle login
-  const handleLoginClick = () => {
-    setShowAuthDialog(true);
-  };
-
-  // Check if the device/browser supports accelerometer
   if (!isAvailable) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center p-6 text-center animate-fade-in">
@@ -197,7 +177,6 @@ const Index = () => {
     );
   }
 
-  // Handle permission denied scenario
   if (!permissionGranted) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center p-6 text-center animate-fade-in">
@@ -279,16 +258,16 @@ const Index = () => {
         </div>
       </div>
 
-      {/* Save Score Dialog */}
       <SaveScoreDialog 
         isOpen={showSaveDialog} 
         onClose={handleSaveDialogClose}
         score={accelerometerData.averageAcceleration}
         elapsedTime={accelerometerData.elapsedTime}
         onLoginRequired={handleLoginRequired}
+        topSpeed={accelerometerData.topSpeed}
+        averageSpeed={accelerometerData.averageSpeed}
       />
       
-      {/* Auth Dialog */}
       <AuthDialog
         isOpen={showAuthDialog}
         onClose={handleAuthClose}
