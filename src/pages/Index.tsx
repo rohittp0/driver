@@ -1,12 +1,15 @@
+
 import React, { useState, useEffect } from 'react';
 import { useAccelerometer } from '@/hooks/useAccelerometer';
 import AccelerometerDisplay from '@/components/AccelerometerDisplay';
 import SaveScoreDialog from '@/components/SaveScoreDialog';
 import AuthDialog from '@/components/AuthDialog';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/components/ui/toast';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import Menu from '@/components/Menu';
+import { Card } from '@/components/ui/card';
+import { Gauge, Wind, TrendingUp } from 'lucide-react';
 
 const Index = () => {
   const { toast } = useToast();
@@ -39,7 +42,7 @@ const Index = () => {
           .from('profiles')
           .select('*')
           .eq('id', data.user.id)
-          .single();
+          .maybeSingle();
           
         setUserProfile(profileData);
       }
@@ -238,20 +241,29 @@ const Index = () => {
         />
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 animate-scale-in">
-          <div className="p-4 rounded-xl bg-secondary/50 shadow-sm backdrop-blur-sm">
-            <div className="text-sm font-medium text-muted-foreground">X-axis</div>
-            <div className="text-2xl font-semibold">{accelerometerData.x.toFixed(2)}</div>
-          </div>
+          <Card className="p-4 rounded-xl bg-secondary/50 shadow-sm backdrop-blur-sm">
+            <div className="flex items-center mb-2">
+              <Gauge className="mr-2 h-4 w-4 text-primary" />
+              <div className="text-sm font-medium text-muted-foreground">Current Speed</div>
+            </div>
+            <div className="text-2xl font-semibold">{accelerometerData.currentSpeed.toFixed(1)} <span className="text-sm font-normal">km/h</span></div>
+          </Card>
           
-          <div className="p-4 rounded-xl bg-secondary/50 shadow-sm backdrop-blur-sm">
-            <div className="text-sm font-medium text-muted-foreground">Y-axis</div>
-            <div className="text-2xl font-semibold">{accelerometerData.y.toFixed(2)}</div>
-          </div>
+          <Card className="p-4 rounded-xl bg-secondary/50 shadow-sm backdrop-blur-sm">
+            <div className="flex items-center mb-2">
+              <TrendingUp className="mr-2 h-4 w-4 text-primary" />
+              <div className="text-sm font-medium text-muted-foreground">Top Speed</div>
+            </div>
+            <div className="text-2xl font-semibold">{accelerometerData.topSpeed.toFixed(1)} <span className="text-sm font-normal">km/h</span></div>
+          </Card>
           
-          <div className="p-4 rounded-xl bg-secondary/50 shadow-sm backdrop-blur-sm">
-            <div className="text-sm font-medium text-muted-foreground">Z-axis</div>
-            <div className="text-2xl font-semibold">{accelerometerData.z.toFixed(2)}</div>
-          </div>
+          <Card className="p-4 rounded-xl bg-secondary/50 shadow-sm backdrop-blur-sm">
+            <div className="flex items-center mb-2">
+              <Wind className="mr-2 h-4 w-4 text-primary" />
+              <div className="text-sm font-medium text-muted-foreground">Avg Speed</div>
+            </div>
+            <div className="text-2xl font-semibold">{accelerometerData.averageSpeed.toFixed(1)} <span className="text-sm font-normal">km/h</span></div>
+          </Card>
         </div>
         
         <div className="mt-8 text-center text-sm text-muted-foreground animate-fade-in">

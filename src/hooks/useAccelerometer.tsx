@@ -9,6 +9,10 @@ interface AccelerometerData {
   accumulatedAcceleration: number;
   elapsedTime: number;
   averageAcceleration: number;
+  // New speed metrics
+  currentSpeed: number;
+  topSpeed: number;
+  averageSpeed: number;
 }
 
 interface UseAccelerometerOptions {
@@ -28,27 +32,49 @@ export function useAccelerometer(options: UseAccelerometerOptions = {}) {
     totalAcceleration: 0,
     accumulatedAcceleration: 0,
     elapsedTime: 0,
-    averageAcceleration: 0
+    averageAcceleration: 0,
+    currentSpeed: 0,
+    topSpeed: 0,
+    averageSpeed: 0
   });
   
   const accumulatedAccelerationRef = useRef<number>(0);
   const startTimeRef = useRef<number | null>(null);
   const previousTimeRef = useRef<number | null>(null);
   
-  // Check if Accelerometer API is available
+  // Track speed metrics
+  const currentSpeedRef = useRef<number>(0);
+  const topSpeedRef = useRef<number>(0);
+  const accumulatedSpeedRef = useRef<number>(0);
+  const lastPositionRef = useRef<GeolocationPosition | null>(null);
+  
+  // Check if Accelerometer and Geolocation APIs are available
   useEffect(() => {
-    if ('Accelerometer' in window) {
-      setIsAvailable(true);
-    } else {
-      setError('Accelerometer API is not supported in this browser');
-      console.error('Accelerometer API is not supported');
-    }
+    const checkAvailability = () => {
+      const hasAccelerometer = 'Accelerometer' in window || 'DeviceMotionEvent' in window;
+      const hasGeolocation = 'geolocation' in navigator;
+      
+      if (hasAccelerometer && hasGeolocation) {
+        setIsAvailable(true);
+      } else {
+        setError('Required APIs (Accelerometer or Geolocation) are not supported in this browser');
+        console.error('Required APIs are not supported');
+      }
+    };
+    
+    checkAvailability();
   }, []);
 
   const resetAccelerometer = useCallback(() => {
     accumulatedAccelerationRef.current = 0;
     startTimeRef.current = null;
     previousTimeRef.current = null;
+    
+    // Reset speed metrics
+    currentSpeedRef.current = 0;
+    topSpeedRef.current = 0;
+    accumulatedSpeedRef.current = 0;
+    lastPositionRef.current = null;
     
     setData({
       x: 0,
@@ -57,7 +83,10 @@ export function useAccelerometer(options: UseAccelerometerOptions = {}) {
       totalAcceleration: 0,
       accumulatedAcceleration: 0,
       elapsedTime: 0,
-      averageAcceleration: 0
+      averageAcceleration: 0,
+      currentSpeed: 0,
+      topSpeed: 0,
+      averageSpeed: 0
     });
   }, []);
 
@@ -77,7 +106,81 @@ export function useAccelerometer(options: UseAccelerometerOptions = {}) {
     setIsRunning(false);
   }, []);
 
-  // Mock accelerometer data for development/testing
+  // Calculate speed using Geolocation API
+  const trackSpeed = useCallback(() => {
+    if (!isRunning) return;
+    
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const now = Date.now();
+        const currentPosition = position;
+        
+        if (lastPositionRef.current && previousTimeRef.current) {
+          // Calculate time difference in seconds
+          const timeDiff = (now - previousTimeRef.current) / 1000;
+          
+          // Calculate distance in meters
+          const lat1 = lastPositionRef.current.coords.latitude;
+          const lon1 = lastPositionRef.current.coords.longitude;
+          const lat2 = currentPosition.coords.latitude;
+          const lon2 = currentPosition.coords.longitude;
+          
+          // Haversine formula to calculate distance between two points
+          const R = 6371e3; // Earth's radius in meters
+          const φ1 = lat1 * Math.PI / 180;
+          const φ2 = lat2 * Math.PI / 180;
+          const Δφ = (lat2 - lat1) * Math.PI / 180;
+          const Δλ = (lon2 - lon1) * Math.PI / 180;
+          
+          const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) +
+                    Math.cos(φ1) * Math.cos(φ2) *
+                    Math.sin(Δλ/2) * Math.sin(Δλ/2);
+          const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+          const distance = R * c;
+          
+          // Calculate speed in meters per second
+          const speed = distance / timeDiff;
+          
+          // Convert to km/h for display
+          const speedKmh = speed * 3.6;
+          
+          // Update speed metrics
+          currentSpeedRef.current = speedKmh;
+          if (speedKmh > topSpeedRef.current) {
+            topSpeedRef.current = speedKmh;
+          }
+          
+          // Accumulate for average
+          accumulatedSpeedRef.current += speedKmh;
+          
+          // Update elapsedTime (in seconds) since start
+          const elapsedTime = startTimeRef.current ? (now - startTimeRef.current) / 1000 : 0;
+          
+          // Calculate average speed
+          const averageSpeed = elapsedTime > 0 
+            ? accumulatedSpeedRef.current / (elapsedTime / timeDiff) 
+            : 0;
+          
+          setData(prevData => ({
+            ...prevData,
+            currentSpeed: speedKmh,
+            topSpeed: topSpeedRef.current,
+            averageSpeed: averageSpeed
+          }));
+        }
+        
+        // Update references for next calculation
+        lastPositionRef.current = currentPosition;
+        previousTimeRef.current = now;
+      },
+      (err) => {
+        console.error('Geolocation error:', err);
+      },
+      { enableHighAccuracy: true }
+    );
+  }, [isRunning]);
+
+  // Mock accelerometer and speed data for development/testing
   const mockAccelerometerData = useCallback(() => {
     if (!isRunning) return;
     
@@ -104,6 +207,20 @@ export function useAccelerometer(options: UseAccelerometerOptions = {}) {
       ? accumulatedAccelerationRef.current / elapsedTime 
       : 0;
     
+    // Mock speed data (for demo)
+    const mockSpeed = 20 + (Math.random() * 30); // Random speed between 20-50 km/h
+    currentSpeedRef.current = mockSpeed;
+    
+    if (mockSpeed > topSpeedRef.current) {
+      topSpeedRef.current = mockSpeed;
+    }
+    
+    // Accumulate for average
+    accumulatedSpeedRef.current += mockSpeed * deltaTime;
+    const averageSpeed = elapsedTime > 0 
+      ? accumulatedSpeedRef.current / elapsedTime 
+      : 0;
+    
     setData({
       x,
       y,
@@ -111,7 +228,10 @@ export function useAccelerometer(options: UseAccelerometerOptions = {}) {
       totalAcceleration: totalAcc,
       accumulatedAcceleration: accumulatedAccelerationRef.current,
       elapsedTime,
-      averageAcceleration: averageAcc
+      averageAcceleration: averageAcc,
+      currentSpeed: mockSpeed,
+      topSpeed: topSpeedRef.current,
+      averageSpeed: averageSpeed
     });
   }, [isRunning]);
 
@@ -142,6 +262,13 @@ export function useAccelerometer(options: UseAccelerometerOptions = {}) {
       ? accumulatedAccelerationRef.current / elapsedTime 
       : 0;
     
+    // Get speed data from reference (updated separately by Geolocation)
+    const currentSpeed = currentSpeedRef.current;
+    const topSpeed = topSpeedRef.current;
+    const averageSpeed = elapsedTime > 0 
+      ? accumulatedSpeedRef.current / elapsedTime 
+      : 0;
+    
     setData({
       x,
       y,
@@ -149,13 +276,17 @@ export function useAccelerometer(options: UseAccelerometerOptions = {}) {
       totalAcceleration: totalAcc,
       accumulatedAcceleration: accumulatedAccelerationRef.current,
       elapsedTime,
-      averageAcceleration: averageAcc
+      averageAcceleration: averageAcc,
+      currentSpeed,
+      topSpeed,
+      averageSpeed
     });
   }, [isRunning]);
 
   // Set up event listeners and intervals
   useEffect(() => {
     let intervalId: number;
+    let speedIntervalId: number;
 
     if (isRunning) {
       // Try to use real accelerometer if available
@@ -164,6 +295,12 @@ export function useAccelerometer(options: UseAccelerometerOptions = {}) {
       } else {
         // Fall back to mock data for testing/development
         intervalId = window.setInterval(mockAccelerometerData, 1000 / frequency);
+      }
+      
+      // Set up speed tracking using Geolocation
+      if ('geolocation' in navigator) {
+        // Update speed every 2 seconds
+        speedIntervalId = window.setInterval(trackSpeed, 2000);
       }
     }
 
@@ -174,8 +311,11 @@ export function useAccelerometer(options: UseAccelerometerOptions = {}) {
       if (intervalId) {
         clearInterval(intervalId);
       }
+      if (speedIntervalId) {
+        clearInterval(speedIntervalId);
+      }
     };
-  }, [isRunning, frequency, handleRealAccelerometerData, mockAccelerometerData]);
+  }, [isRunning, frequency, handleRealAccelerometerData, mockAccelerometerData, trackSpeed]);
 
   return {
     isAvailable,

@@ -65,7 +65,7 @@ const Menu = ({ isAuthenticated, onLoginClick, userProfile }: MenuProps) => {
           <span className="sr-only">Open menu</span>
         </Button>
       </SheetTrigger>
-      <SheetContent side="right" className="w-full sm:max-w-xs flex flex-col">
+      <SheetContent side="left" className="w-full sm:max-w-xs flex flex-col">
         <SheetHeader className="mb-6">
           <SheetTitle>Smooth Driver Challenge</SheetTitle>
         </SheetHeader>
@@ -98,22 +98,21 @@ const Menu = ({ isAuthenticated, onLoginClick, userProfile }: MenuProps) => {
             </Link>
           </Button>
           
-          {isAuthenticated ? (
-            <>
-              <Button variant="ghost" className="w-full justify-start" asChild onClick={() => setOpen(false)}>
-                <Link to="/profile">
-                  <User className="mr-2 h-5 w-5" />
-                  My Profile
-                </Link>
-              </Button>
-              <Button variant="ghost" className="w-full justify-start" asChild onClick={() => setOpen(false)}>
-                <Link to="/leaderboard">
-                  <Trophy className="mr-2 h-5 w-5" />
-                  Leaderboard
-                </Link>
-              </Button>
-            </>
-          ) : (
+          <Button variant="ghost" className="w-full justify-start" asChild onClick={() => setOpen(false)}>
+            <Link to="/profile">
+              <User className="mr-2 h-5 w-5" />
+              My Profile
+            </Link>
+          </Button>
+          
+          <Button variant="ghost" className="w-full justify-start" asChild onClick={() => setOpen(false)}>
+            <Link to="/leaderboard">
+              <Trophy className="mr-2 h-5 w-5" />
+              Leaderboard
+            </Link>
+          </Button>
+          
+          {!isAuthenticated && (
             <Button variant="ghost" className="w-full justify-start" onClick={handleLoginClick}>
               <LogIn className="mr-2 h-5 w-5" />
               Sign In

@@ -52,12 +52,12 @@ const ProfilePage = () => {
       
       setLoading(true);
       try {
-        // Get profile data
+        // Get profile data - Using maybeSingle() instead of single() to handle the case of no rows
         const { data: profileData, error: profileError } = await supabase
           .from('profiles')
           .select('*')
           .eq('id', userId)
-          .single();
+          .maybeSingle();
 
         if (profileError) throw profileError;
         setProfile(profileData);
