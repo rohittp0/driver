@@ -17,7 +17,7 @@ interface UseAccelerometerOptions {
 }
 
 export function useAccelerometer(options: UseAccelerometerOptions = {}) {
-    const {sigma = 0.9} = options;
+    const {sigma = 0.999} = options;
 
     const [isAvailable, setIsAvailable] = useState<boolean>(false);
     const [isRunning, setIsRunning] = useState<boolean>(false);
@@ -35,8 +35,8 @@ export function useAccelerometer(options: UseAccelerometerOptions = {}) {
     });
 
     const accumulatedAccelerationRef = useRef<number>(0);
+    const validAccelerationReadingsRef = useRef<number>(0);
     const startTimeRef = useRef<number | null>(null);
-    const previousTimeRef = useRef<number | null>(null);
 
     // Track speed metrics
     const currentSpeedRef = useRef<number>(0);
@@ -150,26 +150,30 @@ export function useAccelerometer(options: UseAccelerometerOptions = {}) {
 
         const now = Date.now();
         const elapsedTime = startTimeRef.current ? (now - startTimeRef.current) / 1000 : 0;
-        const deltaTime = previousTimeRef.current ? (now - previousTimeRef.current) / 1000 : 0;
-        previousTimeRef.current = now;
-
-        if (deltaTime <= 0) return;
 
         const x = event.accelerationIncludingGravity.x || 0;
         const y = event.accelerationIncludingGravity.y || 0;
         const z = event.accelerationIncludingGravity.z || 0;
 
-        const totalAcc = Math.sqrt(x * x + y * y + z * z) - 9.8;
+        const totalAcc = Math.abs(Math.sqrt(x * x + y * y + z * z) - 9.8) * 10;
         const currentSpeed = currentSpeedRef.current;
         const topSpeed = topSpeedRef.current;
-        const normalizedSpeed = Math.max(normalizeSpeed(currentSpeed), 0.01);
+        const normalizedSpeed = normalizeSpeed(currentSpeed);
 
-        // Accumulate acceleration over time
-        accumulatedAccelerationRef.current = accumulatedAccelerationRef.current * sigma +
-            totalAcc * deltaTime / normalizedSpeed;
+        if(normalizedSpeed > 0) {
+            validAccelerationReadingsRef.current += 1;
+            accumulatedAccelerationRef.current = accumulatedAccelerationRef.current * sigma;
 
-        const averageAcc = elapsedTime > 0
-            ? accumulatedAccelerationRef.current / elapsedTime
+            if (normalizedSpeed < 0.1)
+                accumulatedAccelerationRef.current += Math.pow(totalAcc, 3);
+            else if (normalizedSpeed < 0.3)
+                accumulatedAccelerationRef.current += Math.pow(totalAcc, 2);
+            else
+                accumulatedAccelerationRef.current += totalAcc;
+        }
+
+        const averageAcc = validAccelerationReadingsRef.current > 0
+            ? accumulatedAccelerationRef.current / validAccelerationReadingsRef.current
             : 0;
 
         // Get speed data from reference (updated separately by Geolocation)

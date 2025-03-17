@@ -11,9 +11,9 @@ export function cn(...inputs: ClassValue[]) {
 
 export function calculateScore(accelerometerData: AccelerometerData): number {
     const {averageAcceleration} = accelerometerData;
-    const vehicleAcceleration = Math.min(averageAcceleration * 10, 100);
+    const vehicleAcceleration = Math.min(averageAcceleration, 100);
 
-    return Math.min(100 - Math.abs(vehicleAcceleration), 100);
+    return 100 - Math.abs(vehicleAcceleration);
 }
 
 export function isValidSpeed(speed: number) {
