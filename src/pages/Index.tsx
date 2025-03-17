@@ -4,7 +4,7 @@ import { useAccelerometer } from '@/hooks/useAccelerometer';
 import AccelerometerDisplay from '@/components/AccelerometerDisplay';
 import SaveScoreDialog from '@/components/SaveScoreDialog';
 import AuthDialog from '@/components/AuthDialog';
-import { useToast } from '@/components/ui/toast';
+import { useToast } from '@/components/ui/use-toast';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import Menu from '@/components/Menu';
