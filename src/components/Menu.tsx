@@ -1,9 +1,8 @@
 
 import React from 'react';
-import { 
+import {
   Menu as MenuIcon,
-  LogIn, 
-  LogOut,
+  LogIn,
   User,
   Trophy,
   Home
@@ -67,9 +66,9 @@ const Menu = ({ isAuthenticated, onLoginClick, userProfile }: MenuProps) => {
       </SheetTrigger>
       <SheetContent side="left" className="w-full sm:max-w-xs flex flex-col">
         <SheetHeader className="mb-6">
-          <SheetTitle>Smooth Driver Challenge</SheetTitle>
+          <SheetTitle>Driver</SheetTitle>
         </SheetHeader>
-        
+
         {isAuthenticated && userProfile && (
           <div className="flex items-center space-x-4 mb-6 p-4 bg-secondary/30 rounded-lg">
             <Avatar className="h-12 w-12">
@@ -89,7 +88,7 @@ const Menu = ({ isAuthenticated, onLoginClick, userProfile }: MenuProps) => {
             </div>
           </div>
         )}
-        
+
         <div className="space-y-2 flex-1">
           <Button variant="ghost" className="w-full justify-start" asChild onClick={() => setOpen(false)}>
             <Link to="/">
@@ -97,21 +96,21 @@ const Menu = ({ isAuthenticated, onLoginClick, userProfile }: MenuProps) => {
               Home
             </Link>
           </Button>
-          
+
           <Button variant="ghost" className="w-full justify-start" asChild onClick={() => setOpen(false)}>
             <Link to="/profile">
               <User className="mr-2 h-5 w-5" />
               My Profile
             </Link>
           </Button>
-          
+
           <Button variant="ghost" className="w-full justify-start" asChild onClick={() => setOpen(false)}>
             <Link to="/leaderboard">
               <Trophy className="mr-2 h-5 w-5" />
               Leaderboard
             </Link>
           </Button>
-          
+
           {!isAuthenticated && (
             <Button variant="ghost" className="w-full justify-start" onClick={handleLoginClick}>
               <LogIn className="mr-2 h-5 w-5" />

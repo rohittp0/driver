@@ -24,7 +24,7 @@ const AccelerometerDisplay = ({
   // 9.8 is 100% score, deviations reduce the score linearly
   const perfectScore = 9.8;
   const calculatedScore = Math.max(0, 100 - (Math.abs(averageAcceleration - perfectScore) / perfectScore) * 100);
-  
+
   // Format the acceleration value for display
   const formattedAcceleration = averageAcceleration.toFixed(2);
   const formattedScore = calculatedScore.toFixed(0);
@@ -38,14 +38,11 @@ const AccelerometerDisplay = ({
         <div className="text-3xl font-bold tracking-tight">
           {formattedScore}<span className="text-lg font-normal text-muted-foreground">%</span>
         </div>
-        <div className="text-sm text-muted-foreground mt-1">
-          Avg. Acceleration: {formattedAcceleration} <span>m/s²</span>
-        </div>
       </div>
-      
+
       <div className="relative">
-        <CircularProgress 
-          value={calculatedScore} 
+        <CircularProgress
+          value={calculatedScore}
           size={300}
           strokeWidth={12}
           color="stroke-primary"
@@ -67,7 +64,7 @@ const AccelerometerDisplay = ({
             ) : (
               <Play className="h-12 w-12 text-primary ml-1" />
             )}
-            
+
             {/* Pulse animation when active */}
             {isRunning && (
               <span className="absolute inset-0 rounded-full animate-pulse-ring bg-destructive opacity-20"></span>
@@ -75,11 +72,11 @@ const AccelerometerDisplay = ({
           </Button>
         </CircularProgress>
       </div>
-      
+
       <div className="text-center animate-slide-up">
         <p className="text-sm text-muted-foreground max-w-md">
-          {isRunning 
-            ? "Driving in progress. Stay smooth to get a better score!" 
+          {isRunning
+            ? "Driving in progress. Stay smooth to get a better score!"
             : "Tap the button to start measuring your driving smoothness."}
         </p>
       </div>

@@ -1,11 +1,11 @@
 
 import React, { useRef, useState, useEffect } from 'react';
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogDescription, 
-  DialogHeader, 
-  DialogTitle 
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -39,10 +39,10 @@ const DriveDetailModal = ({
   const cardRef = useRef<HTMLDivElement>(null);
   const [sharing, setSharing] = useState(false);
   const [progressValue, setProgressValue] = useState(0);
-  
+
   // Calculate a normalized score for the progress bar (0-100)
   const normalizedScore = Math.max(0, Math.min(100, 100 - score * 10));
-  
+
   // Update progress value after component has rendered to ensure it's visible in the screenshot
   useEffect(() => {
     if (isOpen) {
@@ -56,13 +56,13 @@ const DriveDetailModal = ({
 
   const handleShare = async () => {
     if (!cardRef.current) return;
-    
+
     try {
       setSharing(true);
-      
+
       // Ensure styles are fully applied before capturing
       await new Promise(resolve => setTimeout(resolve, 100));
-      
+
       // Create a canvas from the card element
       const canvas = await html2canvas(cardRef.current, {
         backgroundColor: null,
@@ -77,24 +77,24 @@ const DriveDetailModal = ({
           }
         }
       });
-      
+
       // Convert canvas to blob
       const blob = await new Promise<Blob>((resolve) => {
         canvas.toBlob((blob) => {
           resolve(blob as Blob);
         }, 'image/png');
       });
-      
+
       // Create shareable data
       if (navigator.share && navigator.canShare) {
         // Use Web Share API if available
         const shareData = {
-          title: 'My Smooth Driver Score',
+          title: 'My Driver Score',
           text: `Check out my driving score of ${score.toFixed(2)}! Top speed: ${topSpeed.toFixed(1)} km/h`,
           url: `${window.location.origin}/profile/${profileId}`,
           files: [new File([blob], 'driving-score.png', { type: 'image/png' })]
         };
-        
+
         if (navigator.canShare(shareData)) {
           await navigator.share(shareData);
           toast({
@@ -104,7 +104,7 @@ const DriveDetailModal = ({
         } else {
           // Fallback if files can't be shared
           await navigator.share({
-            title: 'My Smooth Driver Score',
+            title: 'My Driver Score',
             text: `Check out my driving score of ${score.toFixed(2)}! Top speed: ${topSpeed.toFixed(1)} km/h`,
             url: `${window.location.origin}/profile/${profileId}`,
           });
@@ -118,7 +118,7 @@ const DriveDetailModal = ({
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
-        
+
         toast({
           title: "Image Downloaded",
           description: "Your score card has been downloaded as an image.",
@@ -147,7 +147,7 @@ const DriveDetailModal = ({
             Your driving performance from {new Date(date).toLocaleDateString()}
           </DialogDescription>
         </DialogHeader>
-        
+
         <div ref={cardRef} className="bg-card rounded-lg p-6 space-y-6">
           <div className="space-y-2">
             <div className="text-sm font-medium text-muted-foreground">Smooth Driver Score</div>
@@ -161,7 +161,7 @@ const DriveDetailModal = ({
               <span>Smooth</span>
             </div>
           </div>
-          
+
           <div className="grid grid-cols-2 gap-4">
             <Card>
               <CardContent className="p-4 flex flex-col items-center">
@@ -170,7 +170,7 @@ const DriveDetailModal = ({
                 <div className="text-lg font-semibold">{topSpeed.toFixed(1)} <span className="text-xs">km/h</span></div>
               </CardContent>
             </Card>
-            
+
             <Card>
               <CardContent className="p-4 flex flex-col items-center">
                 <Wind className="h-5 w-5 text-primary mb-1" />
@@ -179,7 +179,7 @@ const DriveDetailModal = ({
               </CardContent>
             </Card>
           </div>
-          
+
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Clock className="h-4 w-4 text-muted-foreground" />
@@ -192,7 +192,7 @@ const DriveDetailModal = ({
             </div>
           </div>
         </div>
-        
+
         <div className="flex justify-between mt-4">
           <Button variant="outline" onClick={onClose}>
             Close
