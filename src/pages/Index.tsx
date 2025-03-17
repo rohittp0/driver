@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useAccelerometer } from '@/hooks/useAccelerometer';
 import AccelerometerDisplay from '@/components/AccelerometerDisplay';
@@ -10,6 +9,7 @@ import { supabase } from '@/integrations/supabase/client';
 import Menu from '@/components/Menu';
 import { Card } from '@/components/ui/card';
 import { Gauge, Wind, TrendingUp } from 'lucide-react';
+import DriveDetailModal from '@/components/DriveDetailModal';
 
 const Index = () => {
   const { toast } = useToast();
@@ -25,9 +25,18 @@ const Index = () => {
   const [permissionGranted, setPermissionGranted] = useState<boolean>(true);
   const [showSaveDialog, setShowSaveDialog] = useState<boolean>(false);
   const [showAuthDialog, setShowAuthDialog] = useState<boolean>(false);
+  const [showDetailModal, setShowDetailModal] = useState<boolean>(false);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [timeThresholdMet, setTimeThresholdMet] = useState<boolean>(false);
   const [userProfile, setUserProfile] = useState<any>(null);
+  const [lastSavedScore, setLastSavedScore] = useState<{
+    score: number;
+    time: number;
+    date: string;
+    topSpeed: number;
+    averageSpeed: number;
+    id: string;
+  } | null>(null);
   
   useEffect(() => {
     const checkUser = async () => {
@@ -131,10 +140,76 @@ const Index = () => {
     }
   }, [isRunning, accelerometerData.elapsedTime]);
 
-  const handleToggle = () => {
+  const saveScoreToDatabase = async () => {
+    try {
+      const { data: userData } = await supabase.auth.getUser();
+      
+      if (!userData.user) {
+        return false;
+      }
+      
+      const { data, error } = await supabase
+        .from('driving_scores')
+        .insert([
+          { 
+            user_id: userData.user.id,
+            score: accelerometerData.averageAcceleration,
+            time_seconds: accelerometerData.elapsedTime,
+            top_speed: accelerometerData.topSpeed,
+            average_speed: accelerometerData.averageSpeed,
+          }
+        ])
+        .select()
+        .single();
+      
+      if (error) {
+        console.error('Error saving score:', error);
+        toast({
+          title: "Error",
+          description: "Failed to save your score. Please try again.",
+          variant: "destructive",
+        });
+        return false;
+      } 
+      
+      setLastSavedScore({
+        score: accelerometerData.averageAcceleration,
+        time: accelerometerData.elapsedTime,
+        date: new Date().toISOString(),
+        topSpeed: accelerometerData.topSpeed,
+        averageSpeed: accelerometerData.averageSpeed,
+        id: data.id
+      });
+      
+      toast({
+        title: "Success",
+        description: "Your driving score has been saved!",
+      });
+      
+      return true;
+    } catch (error) {
+      console.error('Unexpected error saving score:', error);
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred. Please try again.",
+        variant: "destructive",
+      });
+      return false;
+    }
+  };
+
+  const handleToggle = async () => {
     if (isRunning && timeThresholdMet) {
       toggleAccelerometer();
-      setShowSaveDialog(true);
+      
+      if (isAuthenticated) {
+        const success = await saveScoreToDatabase();
+        if (success) {
+          setShowDetailModal(true);
+        }
+      } else {
+        setShowSaveDialog(true);
+      }
     } else {
       if (!isRunning) {
         resetAccelerometer();
@@ -145,6 +220,10 @@ const Index = () => {
 
   const handleSaveDialogClose = () => {
     setShowSaveDialog(false);
+  };
+
+  const handleDetailModalClose = () => {
+    setShowDetailModal(false);
   };
 
   const handleLoginRequired = () => {
@@ -161,7 +240,6 @@ const Index = () => {
     setShowSaveDialog(true);
   };
   
-  // Add the required handleLoginClick function
   const handleLoginClick = () => {
     setShowAuthDialog(true);
   };
@@ -279,6 +357,19 @@ const Index = () => {
         onClose={handleAuthClose}
         onSuccess={handleAuthSuccess}
       />
+
+      {lastSavedScore && (
+        <DriveDetailModal 
+          isOpen={showDetailModal}
+          onClose={handleDetailModalClose}
+          score={lastSavedScore.score}
+          time={lastSavedScore.time}
+          date={lastSavedScore.date}
+          topSpeed={lastSavedScore.topSpeed}
+          averageSpeed={lastSavedScore.averageSpeed}
+          profileId={userProfile?.id || ''}
+        />
+      )}
     </div>
   );
 };

@@ -1,5 +1,5 @@
 
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { 
   Dialog, 
   DialogContent, 
@@ -38,6 +38,21 @@ const DriveDetailModal = ({
   const { toast } = useToast();
   const cardRef = useRef<HTMLDivElement>(null);
   const [sharing, setSharing] = useState(false);
+  const [progressValue, setProgressValue] = useState(0);
+  
+  // Calculate a normalized score for the progress bar (0-100)
+  const normalizedScore = Math.max(0, Math.min(100, 100 - score * 10));
+  
+  // Update progress value after component has rendered to ensure it's visible in the screenshot
+  useEffect(() => {
+    if (isOpen) {
+      // Use a small delay to ensure DOM is updated
+      const timer = setTimeout(() => {
+        setProgressValue(normalizedScore);
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [isOpen, normalizedScore]);
 
   const handleShare = async () => {
     if (!cardRef.current) return;
@@ -45,10 +60,22 @@ const DriveDetailModal = ({
     try {
       setSharing(true);
       
+      // Ensure styles are fully applied before capturing
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
       // Create a canvas from the card element
       const canvas = await html2canvas(cardRef.current, {
         backgroundColor: null,
         scale: 2, // Higher resolution
+        useCORS: true,
+        logging: false,
+        onclone: (document, element) => {
+          // Force update progress element in the cloned node
+          const progressElement = element.querySelector('[role="progressbar"] > div');
+          if (progressElement) {
+            (progressElement as HTMLElement).style.transform = `translateX(-${100 - normalizedScore}%)`;
+          }
+        }
       });
       
       // Convert canvas to blob
@@ -109,9 +136,6 @@ const DriveDetailModal = ({
     }
   };
 
-  // Calculate a normalized score for the progress bar (0-100)
-  const normalizedScore = Math.max(0, Math.min(100, 100 - score * 10));
-
   return (
     <Dialog open={isOpen} onOpenChange={(open) => {
       if (!open) onClose();
@@ -131,7 +155,7 @@ const DriveDetailModal = ({
               <Trophy className="h-5 w-5 text-yellow-500" />
               <span className="text-2xl font-bold">{normalizedScore.toFixed(0)}</span>
             </div>
-            <Progress value={normalizedScore} className="h-2" />
+            <Progress value={progressValue} className="h-2" />
             <div className="flex justify-between text-xs text-muted-foreground mt-1">
               <span>Bumpy</span>
               <span>Smooth</span>
@@ -157,8 +181,8 @@ const DriveDetailModal = ({
           </div>
           
           <div className="flex items-center justify-between">
-            <div className="flex items-center">
-              <Clock className="h-4 w-4 text-muted-foreground mr-2" />
+            <div className="flex items-center gap-2">
+              <Clock className="h-4 w-4 text-muted-foreground" />
               <span className="text-sm text-muted-foreground">
                 {time.toFixed(1)} seconds
               </span>

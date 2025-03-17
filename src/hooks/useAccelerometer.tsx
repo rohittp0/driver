@@ -46,6 +46,7 @@ export function useAccelerometer(options: UseAccelerometerOptions = {}) {
   const currentSpeedRef = useRef<number>(0);
   const topSpeedRef = useRef<number>(0);
   const accumulatedSpeedRef = useRef<number>(0);
+  const validSpeedReadingsRef = useRef<number>(0);
   const lastPositionRef = useRef<GeolocationPosition | null>(null);
   
   // Check if Accelerometer and Geolocation APIs are available
@@ -74,6 +75,7 @@ export function useAccelerometer(options: UseAccelerometerOptions = {}) {
     currentSpeedRef.current = 0;
     topSpeedRef.current = 0;
     accumulatedSpeedRef.current = 0;
+    validSpeedReadingsRef.current = 0;
     lastPositionRef.current = null;
     
     setData({
@@ -105,6 +107,11 @@ export function useAccelerometer(options: UseAccelerometerOptions = {}) {
   const stopAccelerometer = useCallback(() => {
     setIsRunning(false);
   }, []);
+
+  // Filter speed values to only accept readings between 5 and 250 km/h
+  const isValidSpeed = (speed: number): boolean => {
+    return speed >= 5 && speed <= 250;
+  };
 
   // Calculate speed using Geolocation API
   const trackSpeed = useCallback(() => {
@@ -144,28 +151,33 @@ export function useAccelerometer(options: UseAccelerometerOptions = {}) {
           // Convert to km/h for display
           const speedKmh = speed * 3.6;
           
-          // Update speed metrics
-          currentSpeedRef.current = speedKmh;
-          if (speedKmh > topSpeedRef.current) {
-            topSpeedRef.current = speedKmh;
+          // Only update metrics if speed is valid
+          if (isValidSpeed(speedKmh)) {
+            // Update speed metrics
+            currentSpeedRef.current = speedKmh;
+            if (speedKmh > topSpeedRef.current) {
+              topSpeedRef.current = speedKmh;
+            }
+            
+            // Accumulate for average
+            accumulatedSpeedRef.current += speedKmh;
+            validSpeedReadingsRef.current += 1;
           }
-          
-          // Accumulate for average
-          accumulatedSpeedRef.current += speedKmh;
           
           // Update elapsedTime (in seconds) since start
           const elapsedTime = startTimeRef.current ? (now - startTimeRef.current) / 1000 : 0;
           
-          // Calculate average speed
-          const averageSpeed = elapsedTime > 0 
-            ? accumulatedSpeedRef.current / (elapsedTime / timeDiff) 
+          // Calculate average speed - only if we have valid readings
+          const averageSpeed = validSpeedReadingsRef.current > 0 
+            ? accumulatedSpeedRef.current / validSpeedReadingsRef.current 
             : 0;
           
           setData(prevData => ({
             ...prevData,
-            currentSpeed: speedKmh,
+            currentSpeed: currentSpeedRef.current,
             topSpeed: topSpeedRef.current,
-            averageSpeed: averageSpeed
+            averageSpeed: averageSpeed,
+            elapsedTime
           }));
         }
         
@@ -207,8 +219,8 @@ export function useAccelerometer(options: UseAccelerometerOptions = {}) {
       ? accumulatedAccelerationRef.current / elapsedTime 
       : 0;
     
-    // Mock speed data (for demo)
-    const mockSpeed = 20 + (Math.random() * 30); // Random speed between 20-50 km/h
+    // Mock speed data (for demo) - ensure it's within valid range
+    const mockSpeed = 10 + (Math.random() * 40); // Random speed between 10-50 km/h (valid range)
     currentSpeedRef.current = mockSpeed;
     
     if (mockSpeed > topSpeedRef.current) {
@@ -217,8 +229,10 @@ export function useAccelerometer(options: UseAccelerometerOptions = {}) {
     
     // Accumulate for average
     accumulatedSpeedRef.current += mockSpeed * deltaTime;
-    const averageSpeed = elapsedTime > 0 
-      ? accumulatedSpeedRef.current / elapsedTime 
+    validSpeedReadingsRef.current += deltaTime;
+    
+    const averageSpeed = validSpeedReadingsRef.current > 0 
+      ? accumulatedSpeedRef.current / validSpeedReadingsRef.current 
       : 0;
     
     setData({
@@ -265,8 +279,8 @@ export function useAccelerometer(options: UseAccelerometerOptions = {}) {
     // Get speed data from reference (updated separately by Geolocation)
     const currentSpeed = currentSpeedRef.current;
     const topSpeed = topSpeedRef.current;
-    const averageSpeed = elapsedTime > 0 
-      ? accumulatedSpeedRef.current / elapsedTime 
+    const averageSpeed = validSpeedReadingsRef.current > 0 
+      ? accumulatedSpeedRef.current / validSpeedReadingsRef.current 
       : 0;
     
     setData({
