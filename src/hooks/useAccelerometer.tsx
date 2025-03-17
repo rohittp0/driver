@@ -1,4 +1,5 @@
 import {useState, useEffect, useRef, useCallback} from 'react';
+import {isValidSpeed, normalizeSpeed} from "@/lib/utils.ts";
 
 export interface AccelerometerData {
     x: number;
@@ -16,7 +17,7 @@ interface UseAccelerometerOptions {
 }
 
 export function useAccelerometer(options: UseAccelerometerOptions = {}) {
-    const {sigma = 0.7} = options;
+    const {sigma = 0.9} = options;
 
     const [isAvailable, setIsAvailable] = useState<boolean>(false);
     const [isRunning, setIsRunning] = useState<boolean>(false);
@@ -97,11 +98,6 @@ export function useAccelerometer(options: UseAccelerometerOptions = {}) {
         setIsRunning(false);
     }, []);
 
-    // Filter speed values to only accept readings between 5 and 250 km/h
-    const isValidSpeed = (speed: number): boolean => {
-        return speed >= 5 && speed <= 250;
-    };
-
     // Calculate speed using Geolocation API
     const trackSpeed = useCallback(() => {
         if (!isRunning) return;
@@ -166,10 +162,11 @@ export function useAccelerometer(options: UseAccelerometerOptions = {}) {
         const totalAcc = Math.sqrt(x * x + y * y + z * z) - 9.8;
         const currentSpeed = currentSpeedRef.current;
         const topSpeed = topSpeedRef.current;
+        const normalizedSpeed = Math.max(normalizeSpeed(currentSpeed), 0.01);
 
         // Accumulate acceleration over time
         accumulatedAccelerationRef.current = accumulatedAccelerationRef.current * sigma +
-            totalAcc * deltaTime / Math.max(0.5, currentSpeed);
+            totalAcc * deltaTime / normalizedSpeed;
 
         const averageAcc = elapsedTime > 0
             ? accumulatedAccelerationRef.current / elapsedTime
