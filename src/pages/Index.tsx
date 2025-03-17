@@ -161,7 +161,7 @@ const Index = () => {
     setShowSaveDialog(true);
   };
   
-  // Add the missing handleLoginClick function
+  // Add the required handleLoginClick function
   const handleLoginClick = () => {
     setShowAuthDialog(true);
   };
