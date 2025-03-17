@@ -13,13 +13,8 @@ interface AuthDialogProps {
 const AuthDialog = ({ isOpen, onClose, onSuccess }: AuthDialogProps) => {
   const handleGoogleSignIn = async () => {
     try {
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: window.location.origin
-        }
-      });
-      
+      const { error } = await supabase.auth.signInWithOAuth({ provider: 'google' });
+
       if (error) {
         console.error('Error signing in with Google:', error);
       }
