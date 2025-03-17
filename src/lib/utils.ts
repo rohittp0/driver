@@ -1,16 +1,14 @@
-import { clsx, type ClassValue } from "clsx"
-import { twMerge } from "tailwind-merge"
+import {clsx, type ClassValue} from "clsx"
+import {twMerge} from "tailwind-merge"
 import {AccelerometerData} from "@/hooks/useAccelerometer.tsx";
 
 export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs))
+    return twMerge(clsx(inputs))
 }
 
-export function calculateScore(accelerometerData:  AccelerometerData): number {
-    const g = 9.8;
-    const max_acceleration = 14.5 - g; // Tesla maxes at 13.4
-    const {averageAcceleration, averageSpeed, topSpeed} = accelerometerData;
-    const vehicleAcceleration = averageAcceleration - g;
+export function calculateScore(accelerometerData: AccelerometerData): number {
+    const {averageAcceleration} = accelerometerData;
+    const vehicleAcceleration = Math.min(averageAcceleration * 100, 100);
 
-    return 100 - (Math.abs(vehicleAcceleration) / max_acceleration) * 100;
+    return Math.abs(100 - vehicleAcceleration);
 }
