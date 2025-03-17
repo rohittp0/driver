@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useAccelerometer } from '@/hooks/useAccelerometer';
 import AccelerometerDisplay from '@/components/AccelerometerDisplay';
@@ -158,6 +159,11 @@ const Index = () => {
   const handleAuthSuccess = () => {
     setShowAuthDialog(false);
     setShowSaveDialog(true);
+  };
+  
+  // Add the missing handleLoginClick function
+  const handleLoginClick = () => {
+    setShowAuthDialog(true);
   };
   
   if (!isAvailable) {

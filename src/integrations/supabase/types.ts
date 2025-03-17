@@ -11,24 +11,30 @@ export type Database = {
     Tables: {
       driving_scores: {
         Row: {
+          average_speed: number | null
           created_at: string
           id: string
           score: number
           time_seconds: number
+          top_speed: number | null
           user_id: string
         }
         Insert: {
+          average_speed?: number | null
           created_at?: string
           id?: string
           score: number
           time_seconds: number
+          top_speed?: number | null
           user_id: string
         }
         Update: {
+          average_speed?: number | null
           created_at?: string
           id?: string
           score?: number
           time_seconds?: number
+          top_speed?: number | null
           user_id?: string
         }
         Relationships: []
