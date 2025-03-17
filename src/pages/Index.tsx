@@ -4,7 +4,7 @@ import AccelerometerDisplay from '@/components/AccelerometerDisplay';
 import SaveScoreDialog from '@/components/SaveScoreDialog';
 import AuthDialog from '@/components/AuthDialog';
 import { useToast } from '@/components/ui/use-toast';
-import { cn } from '@/lib/utils';
+import {calculateScore, cn} from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import Menu from '@/components/Menu';
 import { Card } from '@/components/ui/card';
@@ -153,7 +153,7 @@ const Index = () => {
         .insert([
           {
             user_id: userData.user.id,
-            score: accelerometerData.averageAcceleration,
+            score: calculateScore(accelerometerData),
             time_seconds: accelerometerData.elapsedTime,
             top_speed: accelerometerData.topSpeed,
             average_speed: accelerometerData.averageSpeed,
@@ -295,7 +295,7 @@ const Index = () => {
           </header>
 
           <AccelerometerDisplay
-          averageAcceleration={accelerometerData.averageAcceleration}
+          score={calculateScore(accelerometerData)}
           elapsedTime={accelerometerData.elapsedTime}
           isRunning={isRunning}
           onToggle={handleToggle}

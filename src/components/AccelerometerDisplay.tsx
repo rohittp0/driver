@@ -1,12 +1,12 @@
 
 import React from 'react';
 import { Play, Pause } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import {cn} from '@/lib/utils';
 import CircularProgress from './CircularProgress';
 import { Button } from '@/components/ui/button';
 
 interface AccelerometerDisplayProps {
-  averageAcceleration: number;
+  score: number;
   elapsedTime: number;
   isRunning: boolean;
   onToggle: () => void;
@@ -14,19 +14,14 @@ interface AccelerometerDisplayProps {
 }
 
 const AccelerometerDisplay = ({
-  averageAcceleration,
+  score,
   elapsedTime,
   isRunning,
   onToggle,
   className,
 }: AccelerometerDisplayProps) => {
-  // Calculate score based on proximity to 9.8 (gravity)
-  // 9.8 is 100% score, deviations reduce the score linearly
-  const perfectScore = 9.8;
-  const calculatedScore = Math.max(0, 100 - (Math.abs(averageAcceleration - perfectScore) / perfectScore) * 100);
-
   // Format the acceleration value for display
-  const formattedScore = calculatedScore.toFixed(0);
+  const formattedScore = score.toFixed(0);
 
   return (
     <div className={cn("flex flex-col items-center justify-center gap-8", className)}>
@@ -41,7 +36,7 @@ const AccelerometerDisplay = ({
 
       <div className="relative">
         <CircularProgress
-          value={calculatedScore}
+          value={score}
           size={300}
           strokeWidth={12}
           color="stroke-primary"
