@@ -7,18 +7,18 @@ import { Button } from '@/components/ui/button';
 
 interface AccelerometerDisplayProps {
   averageAcceleration: number;
+  elapsedTime: number;
   isRunning: boolean;
   onToggle: () => void;
   className?: string;
-  maxAcceleration?: number;
 }
 
 const AccelerometerDisplay = ({
   averageAcceleration,
+  elapsedTime,
   isRunning,
   onToggle,
   className,
-  maxAcceleration = 20 // Max value for the progress bar
 }: AccelerometerDisplayProps) => {
   // Calculate score based on proximity to 9.8 (gravity)
   // 9.8 is 100% score, deviations reduce the score linearly
@@ -26,7 +26,6 @@ const AccelerometerDisplay = ({
   const calculatedScore = Math.max(0, 100 - (Math.abs(averageAcceleration - perfectScore) / perfectScore) * 100);
 
   // Format the acceleration value for display
-  const formattedAcceleration = averageAcceleration.toFixed(2);
   const formattedScore = calculatedScore.toFixed(0);
 
   return (
@@ -76,7 +75,7 @@ const AccelerometerDisplay = ({
       <div className="text-center animate-slide-up">
         <p className="text-sm text-muted-foreground max-w-md">
           {isRunning
-            ? "Driving in progress. Stay smooth to get a better score!"
+            ? <p>Driving time: <span className="font-medium">{elapsedTime.toFixed(1)}s</span></p>
             : "Tap the button to start measuring your driving smoothness."}
         </p>
       </div>

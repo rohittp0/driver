@@ -281,19 +281,22 @@ const Index = () => {
       "transition-colors duration-500 ease-in-out bg-background",
     )}>
       <div className="w-full max-w-xl mx-auto">
-        <header className="text-center mt-8 mb-20 animate-fade-in">
-          <div className="flex justify-between items-center mb-4">
-              <Menu
-                  isAuthenticated={isAuthenticated}
-                  onLoginClick={handleLoginClick}
-                  userProfile={userProfile}
-              />
-            <h1 className="text-3xl font-bold tracking-tight">Driver</h1>
-          </div>
-        </header>
+          <header className="text-center mt-8 mb-20 animate-fade-in">
+              <div className="flex justify-center items-center relative mb-4">
+                  <div className="absolute left-0">
+                      <Menu
+                          isAuthenticated={isAuthenticated}
+                          onLoginClick={handleLoginClick}
+                          userProfile={userProfile}
+                      />
+                  </div>
+                  <h1 className="text-3xl font-bold tracking-tight">Driver</h1>
+              </div>
+          </header>
 
-        <AccelerometerDisplay
+          <AccelerometerDisplay
           averageAcceleration={accelerometerData.averageAcceleration}
+          elapsedTime={accelerometerData.elapsedTime}
           isRunning={isRunning}
           onToggle={handleToggle}
           className="mb-12"

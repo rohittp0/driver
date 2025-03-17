@@ -3,7 +3,6 @@ import React from 'react';
 import {
   Menu as MenuIcon,
   LogIn,
-  User,
   Trophy,
   Home
 } from 'lucide-react';
@@ -90,17 +89,16 @@ const Menu = ({ isAuthenticated, onLoginClick, userProfile }: MenuProps) => {
         )}
 
         <div className="space-y-2 flex-1">
+            {!isAuthenticated && (
+                <Button variant="ghost" className="w-full justify-start" onClick={handleLoginClick}>
+                    <LogIn className="mr-2 h-5 w-5" />
+                    Sign In
+                </Button>
+            )}
           <Button variant="ghost" className="w-full justify-start" asChild onClick={() => setOpen(false)}>
             <Link to="/">
               <Home className="mr-2 h-5 w-5" />
               Home
-            </Link>
-          </Button>
-
-          <Button variant="ghost" className="w-full justify-start" asChild onClick={() => setOpen(false)}>
-            <Link to="/profile">
-              <User className="mr-2 h-5 w-5" />
-              My Profile
             </Link>
           </Button>
 
@@ -110,13 +108,6 @@ const Menu = ({ isAuthenticated, onLoginClick, userProfile }: MenuProps) => {
               Leaderboard
             </Link>
           </Button>
-
-          {!isAuthenticated && (
-            <Button variant="ghost" className="w-full justify-start" onClick={handleLoginClick}>
-              <LogIn className="mr-2 h-5 w-5" />
-              Sign In
-            </Button>
-          )}
         </div>
       </SheetContent>
     </Sheet>

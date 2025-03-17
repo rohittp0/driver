@@ -1,7 +1,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 
-interface AccelerometerData {
+export interface AccelerometerData {
   x: number;
   y: number;
   z: number;
