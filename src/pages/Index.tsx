@@ -24,18 +24,31 @@ const Index = () => {
   const [showAuthDialog, setShowAuthDialog] = useState<boolean>(false);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [timeThresholdMet, setTimeThresholdMet] = useState<boolean>(false);
+  const [userProfile, setUserProfile] = useState<any>(null);
   
   // Check authentication status
   useEffect(() => {
     const checkUser = async () => {
       const { data } = await supabase.auth.getUser();
-      setIsAuthenticated(!!data.user);
+      const isAuth = !!data.user;
+      setIsAuthenticated(isAuth);
+      
+      if (isAuth) {
+        // Fetch user profile
+        const { data: profileData } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', data.user.id)
+          .single();
+          
+        setUserProfile(profileData);
+      }
     };
     
     checkUser();
     
     // Subscribe to auth state changes
-    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
+    const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
       setIsAuthenticated(!!session?.user);
       
       if (event === 'SIGNED_IN') {
@@ -43,6 +56,17 @@ const Index = () => {
           title: "Signed In",
           description: "You have successfully signed in.",
         });
+        
+        // Fetch user profile after sign in
+        if (session?.user) {
+          const { data: profileData } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', session.user.id)
+            .single();
+            
+          setUserProfile(profileData);
+        }
         
         // If user was trying to save a score, reopen save dialog
         if (showAuthDialog) {
@@ -54,6 +78,7 @@ const Index = () => {
           title: "Signed Out",
           description: "You have signed out.",
         });
+        setUserProfile(null);
       }
     });
     
@@ -196,7 +221,8 @@ const Index = () => {
             <h1 className="text-3xl font-bold tracking-tight">Smooth Driver Challenge</h1>
             <Menu 
               isAuthenticated={isAuthenticated}
-              onLoginClick={handleLoginClick} 
+              onLoginClick={handleLoginClick}
+              userProfile={userProfile}
             />
           </div>
           <p className="text-muted-foreground">
@@ -261,4 +287,3 @@ const Index = () => {
 };
 
 export default Index;
-
