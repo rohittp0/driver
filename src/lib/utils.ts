@@ -13,7 +13,10 @@ export function calculateScore(accelerometerData: AccelerometerData): number {
     const {averageAcceleration} = accelerometerData;
     const vehicleAcceleration = Math.min(averageAcceleration, 100);
 
-    return 100 - Math.abs(vehicleAcceleration);
+    if(vehicleAcceleration <= 0)
+        return 0;
+
+    return 100 - vehicleAcceleration;
 }
 
 export function isValidSpeed(speed: number) {
