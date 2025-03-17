@@ -29,7 +29,7 @@ const ProfilePage = () => {
       if (data.user) {
         // If no userId is provided, use the current user's ID
         if (!userId) {
-          navigate(`/profile/${data.user.id}`);
+          navigate(`/profile/${data.user.id}`, { replace: true });
         } else {
           // Check if viewing own profile
           setIsCurrentUser(data.user.id === userId);
@@ -52,7 +52,7 @@ const ProfilePage = () => {
   useEffect(() => {
     const fetchProfileData = async () => {
       if (!userId) return;
-      
+
       setLoading(true);
       try {
         // Get profile data - Using maybeSingle() instead of single() to handle the case of no rows
@@ -134,9 +134,9 @@ const ProfilePage = () => {
 
   return (
     <div className="min-h-screen flex flex-col p-6">
-      <Button 
-        variant="ghost" 
-        className="mb-6 self-start" 
+      <Button
+        variant="ghost"
+        className="mb-6 self-start"
         onClick={() => navigate(-1)}
       >
         <ArrowLeft className="mr-2 h-4 w-4" />
@@ -186,8 +186,8 @@ const ProfilePage = () => {
       {scores.length > 0 ? (
         <div className="space-y-4">
           {scores.map((score) => (
-            <Card 
-              key={score.id} 
+            <Card
+              key={score.id}
               className="hover:bg-accent/50 transition-colors cursor-pointer"
               onClick={() => handleViewDriveDetails(score)}
             >
