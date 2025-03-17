@@ -14,10 +14,8 @@ interface LeaderboardEntry {
   time_seconds: number;
   user_id: string;
   created_at: string;
-  profile: {
-    username: string;
-    avatar_url: string;
-  };
+  username?: string;
+  avatar_url?: string;
 }
 
 interface TopPlayer {
@@ -55,8 +53,7 @@ const LeaderboardPage = () => {
             score,
             time_seconds,
             user_id,
-            created_at,
-            profile:profiles(username, avatar_url)
+            created_at
           `)
           .gte('created_at', currentMonthStart)
           .lte('created_at', currentMonthEnd)
@@ -64,8 +61,7 @@ const LeaderboardPage = () => {
           .limit(20);
 
         if (currentError) throw currentError;
-        setCurrentLeaderboard(currentData || []);
-
+        
         // Fetch last month leaderboard
         const { data: lastMonthData, error: lastMonthError } = await supabase
           .from('driving_scores')
@@ -73,8 +69,7 @@ const LeaderboardPage = () => {
             score,
             time_seconds,
             user_id,
-            created_at,
-            profile:profiles(username, avatar_url)
+            created_at
           `)
           .gte('created_at', lastMonthStart)
           .lte('created_at', lastMonthEnd)
@@ -82,22 +77,59 @@ const LeaderboardPage = () => {
           .limit(20);
 
         if (lastMonthError) throw lastMonthError;
-        setLastMonthLeaderboard(lastMonthData || []);
+        
+        // Fetch profiles for all users in both datasets
+        const uniqueUserIds = [...new Set([
+          ...(currentData || []).map(entry => entry.user_id),
+          ...(lastMonthData || []).map(entry => entry.user_id)
+        ])];
+        
+        const { data: profilesData, error: profilesError } = await supabase
+          .from('profiles')
+          .select('id, username, avatar_url')
+          .in('id', uniqueUserIds);
+          
+        if (profilesError) throw profilesError;
+        
+        // Create a map of user profiles
+        const profilesMap = new Map();
+        (profilesData || []).forEach(profile => {
+          profilesMap.set(profile.id, {
+            username: profile.username || 'Unknown User',
+            avatar_url: profile.avatar_url
+          });
+        });
+        
+        // Combine scores with user profiles
+        const currentLeaderboardWithProfiles = (currentData || []).map(entry => ({
+          ...entry,
+          username: profilesMap.get(entry.user_id)?.username || 'Unknown User',
+          avatar_url: profilesMap.get(entry.user_id)?.avatar_url
+        }));
+        
+        const lastMonthLeaderboardWithProfiles = (lastMonthData || []).map(entry => ({
+          ...entry,
+          username: profilesMap.get(entry.user_id)?.username || 'Unknown User',
+          avatar_url: profilesMap.get(entry.user_id)?.avatar_url
+        }));
+        
+        setCurrentLeaderboard(currentLeaderboardWithProfiles);
+        setLastMonthLeaderboard(lastMonthLeaderboardWithProfiles);
 
         // Extract top 3 from last month
-        if (lastMonthData && lastMonthData.length > 0) {
+        if (lastMonthLeaderboardWithProfiles.length > 0) {
           // Get unique users with their best scores
           const userBestScores = new Map<string, TopPlayer>();
           
-          lastMonthData.forEach(entry => {
+          lastMonthLeaderboardWithProfiles.forEach(entry => {
             const userId = entry.user_id;
             const currentBest = userBestScores.get(userId);
             
             if (!currentBest || entry.score < currentBest.score) {
               userBestScores.set(userId, {
                 user_id: userId,
-                username: entry.profile?.username || 'Unknown',
-                avatar_url: entry.profile?.avatar_url || '',
+                username: entry.username || 'Unknown User',
+                avatar_url: entry.avatar_url || '',
                 score: entry.score
               });
             }
@@ -193,14 +225,14 @@ const LeaderboardPage = () => {
               {index + 1}.
             </div>
             <Avatar className="h-10 w-10 mr-3">
-              {entry.profile?.avatar_url ? (
-                <AvatarImage src={entry.profile.avatar_url} alt={entry.profile?.username || "User"} />
+              {entry.avatar_url ? (
+                <AvatarImage src={entry.avatar_url} alt={entry.username || "User"} />
               ) : (
-                <AvatarFallback>{entry.profile?.username?.charAt(0) || "U"}</AvatarFallback>
+                <AvatarFallback>{entry.username?.charAt(0) || "U"}</AvatarFallback>
               )}
             </Avatar>
             <div className="flex-1">
-              <p className="font-medium">{entry.profile?.username || "Unknown"}</p>
+              <p className="font-medium">{entry.username || "Unknown"}</p>
               <p className="text-xs text-muted-foreground">
                 {new Date(entry.created_at).toLocaleDateString()}
               </p>
